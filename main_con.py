@@ -39,7 +39,7 @@ def algor(args):
     y = task.y
     N = len(X)
     ratio = args.ratio
-    if sample==1:
+    if args.sample==1:
         Y = np.empty([N])
         for i in range(N):
             Y[i] = -y[i]
@@ -48,7 +48,7 @@ def algor(args):
         np.random.shuffle(new_index)
         x = torch.Tensor(X[new_index].astype(np.float32)).cuda()
         y = torch.Tensor(-np.expand_dims(Y[new_index], 1).astype(np.float32)).cuda()
-    elif sample==2:
+    elif args.sample==2:
         Y = np.empty([N])
         for i in range(N):
             Y[i] = -y[i]
@@ -60,7 +60,7 @@ def algor(args):
         np.random.shuffle(new_index)
         x = torch.Tensor(X[new_index]).cuda()
         y = torch.Tensor(-np.expand_dims(Y[new_index], 1)).cuda()
-    elif sample==3:
+    elif args.sample==3:
         Y = np.empty([N])
         for i in range(N):
             Y[i] = -y[i]
@@ -211,7 +211,7 @@ def algor(args):
         #         au_y[j] = task.denormalize_y(au_y[j].astype(np.float32))
         #     if task.is_normalized_x:
         #         au_x[j] = task.denormalize_y(au_x[j].astype(np.float32))
-
+    save_name = args.task + '-' + args.sample + '-' +args.ratio
     df_x = pd.DataFrame(au_x, columns=['x_' + str(i) for i in range(len(x[0]))])
     df_y = pd.DataFrame(au_y, columns=['y'])
     df_xy = pd.concat([df_x, df_y], axis=1)   
