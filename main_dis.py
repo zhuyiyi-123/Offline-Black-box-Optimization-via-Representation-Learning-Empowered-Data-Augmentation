@@ -9,74 +9,81 @@ from nets import ContinuousDecoderModel, DiscreteDecoderModel
 from trainers import Autoencoder
 from utils import get_weights, TaskDataset
 import pandas as pd
+import argparse
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--task', choices=['TFBind8-Exact-v0', 'Superconductor-RandomForest-v0', 'UTR-ResNet-v0', 'HopperController-Exact-v0', 'DKittyMorphology-Exact-v0'], type=str, 
+                                       default='TFBind8-Exact-v0')
+parser.add_argument('--task_kwargs', default={"relabel": False}, type=str)
+parser.add_argument('--normalize_ys', default=True, type=bool)
+parser.add_argument('--normalize_xs', default=False, type=bool)
+parser.add_argument('--sample', default=1, type=int)
+parser.add_argument('--ratio', default=0.8, type=float)
 
+args = parser.parse_args()
 
-def algor():
+def algor(args):
     # create the training task and logger
-    task = "UTR-ResNet-v0"
-    task_kwargs = {"relabel": False}
     logger = Logger("data")
     # task = StaticGraphTask(f"ChEMBL_{'MCHC'}_{'CHEMBL3885882'}"f"_MorganFingerprint-RandomForest-v0", **{"relabel": False,
     #                     "dataset_kwargs": dict(
     #                         assay_chembl_id='CHEMBL3885882',
     #                         standard_type='MCHC')})
-    task = StaticGraphTask(task, **task_kwargs)
-    normalize_ys = True
-    normalize_xs = True
-    if normalize_ys:
+    task = StaticGraphTask(args.task, **args.task_kwargs)
+    if args.normalize_ys:
         task.map_normalize_y()
-    # if task.is_discrete and not False:
-    #     task.map_to_logits()
-    # if normalize_xs:
-    #     task.map_normalize_x()
+    if task.is_discrete and not False:
+        task.map_to_logits()
+    if args.normalize_xs:
+        task.map_normalize_x()
 
     X = task.x
     y = task.y
     N = len(X)
+    ratio = args.ratio
 
-    # Sample 1
-    Y = np.empty([N])
-    for i in range(N):
-        Y[i] = -y[i]
-    index = Y.argsort()
-    ratio = 0.2
-    new_index = index[int(N * ratio):]
-    np.random.shuffle(new_index)
-    x = torch.Tensor(X[new_index].astype(np.float32)).cuda()
-    y = torch.Tensor(-np.expand_dims(Y[new_index], 1).astype(np.float32)).cuda()
-    print(x.size())
-
-    # Sample 2
-    # Y = np.empty([N])
-    # for i in range(N):
-    #     Y[i] = -y[i]
-    # index = Y.argsort()
-    # ratio = 0.8
-    # new_index = index[int(N * ratio):]
-    # block_count = int(ratio * len(new_index))
-    # block_len = len(new_index) // block_count
-    # new_index = np.delete(new_index, [block_len * i - 1 for i in range(1, block_count + 1)])
-    # np.random.shuffle(new_index)
-    # x = torch.Tensor(X[new_index]).cuda()
-    # y = torch.Tensor(-np.expand_dims(Y[new_index], 1)).cuda()
-
-    # Sample 3
-    # Y = np.empty([N])
-    # for i in range(N):
-    #     Y[i] = -y[i]
-    # ratio = 0.2
-    # index = Y.argsort()
-    # new_index = index[int(N * ratio):]
-    # new_index = np.random.choice(new_index, size=int(N * 0.2), replace=False)
-    # np.random.shuffle(new_index)
-    # x = torch.Tensor(X[new_index]).cuda()
-    # y = torch.Tensor(-np.expand_dims(Y[new_index], 1)).cuda()
-    # print(x.size())
+    if args.sample==1
+        # Sample 1
+        Y = np.empty([N])
+        for i in range(N):
+            Y[i] = -y[i]
+        index = Y.argsort()
+        new_index = index[int(N * ratio):]
+        np.random.shuffle(new_index)
+        x = torch.Tensor(X[new_index].astype(np.float32)).cuda()
+        y = torch.Tensor(-np.expand_dims(Y[new_index], 1).astype(np.float32)).cuda()
+        print(x.size())
+    elif args.sample==2:
+        # Sample 2
+        Y = np.empty([N])
+        for i in range(N):
+            Y[i] = -y[i]
+        index = Y.argsort()
+        ratio = 0.8
+        new_index = index[int(N * ratio):]
+        block_count = int(ratio * len(new_index))
+        block_len = len(new_index) // block_count
+        new_index = np.delete(new_index, [block_len * i - 1 for i in range(1, block_count + 1)])
+        np.random.shuffle(new_index)
+        x = torch.Tensor(X[new_index]).cuda()
+        y = torch.Tensor(-np.expand_dims(Y[new_index], 1)).cuda()
+    elif args.sample==3:
+        # Sample 3
+        Y = np.empty([N])
+        for i in range(N):
+            Y[i] = -y[i]
+        ratio = 0.2
+        index = Y.argsort()
+        new_index = index[int(N * ratio):]
+        new_index = np.random.choice(new_index, size=int(N * 0.2), replace=False)
+        np.random.shuffle(new_index)
+        x = torch.Tensor(X[new_index]).cuda()
+        y = torch.Tensor(-np.expand_dims(Y[new_index], 1)).cuda()
+        print(x.size())
     
     input_shape = x.shape[1:]
-    # if task.is_discrete:
-    #     input_shape = list(x.shape[1:]) + [task.num_classes]
+    if task.is_discrete:
+        input_shape = list(x.shape[1:]) + [task.num_classes]
 
     # make several encoder and decoder neural networks with two hidden layers
     encoder = EncoderModel(
@@ -100,16 +107,16 @@ def algor():
                                           w=get_weights(y_cpu.numpy()),
                                           batch_size=128, val_size=500, buffer=1)
 
-    # def map_to_probs(x, *rest):
-    #     x = task.to_logits(x)
-    #     x = tf.pad(x, [[0, 0]] * (len(x.shape) - 1) + [[1, 0]])
-    #     return (tf.math.softmax(x / 1e-5), *rest)
+    def map_to_probs(x, *rest):
+        x = task.to_logits(x)
+        x = tf.pad(x, [[0, 0]] * (len(x.shape) - 1) + [[1, 0]])
+        return (tf.math.softmax(x / 1e-5), *rest)
 
-    # if task.is_discrete:
-    #     train_data = train_data.map(
-    #         map_to_probs, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-    #     val_data = val_data.map(
-    #         map_to_probs, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    if task.is_discrete:
+        train_data = train_data.map(
+            map_to_probs, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        val_data = val_data.map(
+            map_to_probs, num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
     # train the model for several epochs
     initial_epochs = 200
@@ -228,11 +235,10 @@ def algor():
         #     if task.is_normalized_x:
         #         au_x[j] = task.denormalize_y(au_x[j].astype(np.float32))
 
-    # df_x = pd.DataFrame(au_x, columns=['x_' + str(i) for i in range(len(x[0]))])
     au_x = tf.reshape(au_x, shape=(20,  len(x[0])))
     df_x = pd.DataFrame(au_x.numpy(), columns=['x_' + str(i) for i in range(len(x[0]))])
     df_y = pd.DataFrame(au_y, columns=['y'])
     df_xy = pd.concat([df_x, df_y], axis=1)
     df_xy.to_csv(os.path.join('utr_0.2_1_mm' + '.csv'))
-
-algor()
+if __name__ == "__main__":
+    algor(args)
