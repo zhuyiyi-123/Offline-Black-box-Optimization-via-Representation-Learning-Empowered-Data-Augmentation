@@ -11,9 +11,9 @@ conda activate CPE
 ## Reproducing Performance
 For continuous tasks, we can run CPE as:
 ```bash
-python main_con.py
+python main_con.py --task Superconductor-RandomForest-v0 --sample 1 --ratio 0.2
 ```
 For discrete tasks, we can run CPE as:
 ```bash
-python main_dis.py
+python main_dis.py --task TFBind8-Exact-v0 --sample 1 --ratio 0.2
 ```
