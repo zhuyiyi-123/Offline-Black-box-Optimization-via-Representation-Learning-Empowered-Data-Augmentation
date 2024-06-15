@@ -235,10 +235,11 @@ def algor(args):
         #     if task.is_normalized_x:
         #         au_x[j] = task.denormalize_y(au_x[j].astype(np.float32))
 
+    save_name = args.task + '-' + args.sample + '-' +args.ratio
     au_x = tf.reshape(au_x, shape=(20,  len(x[0])))
     df_x = pd.DataFrame(au_x.numpy(), columns=['x_' + str(i) for i in range(len(x[0]))])
     df_y = pd.DataFrame(au_y, columns=['y'])
     df_xy = pd.concat([df_x, df_y], axis=1)
-    df_xy.to_csv(os.path.join('utr_0.2_1_mm' + '.csv'))
+    df_xy.to_csv(os.path.join(save_name + '.csv'))
 if __name__ == "__main__":
     algor(args)
