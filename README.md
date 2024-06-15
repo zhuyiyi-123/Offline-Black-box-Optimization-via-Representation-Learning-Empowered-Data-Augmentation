@@ -4,7 +4,7 @@ We propose the Cyclic Predictive Encoder method (CPE) to augment the non-ideal d
 
 ## Installation
 The environment of CPE can be installed as:
-'''
+```bash
 conda create --name CPE --file requirements.txt
 conda activate CPE
-'''
+```
